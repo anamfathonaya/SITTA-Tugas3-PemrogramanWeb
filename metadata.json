@@ -1,0 +1,6 @@
+{
+  "name": "SITTA UT",
+  "description": "Sistem Informasi Tiras Transaksi Bahan Ajar Universitas Terbuka berbasis Vue.js",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

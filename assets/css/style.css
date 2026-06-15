@@ -1,0 +1,157 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* ==========================================================================
+   assets/css/style.css
+   ========================================================================== 
+   Fungsi: Mengatur gaya visual global, tipografi, transisi, animasi modal,
+   serta ornamen visual bertingkat yang tidak dicover oleh default utility classes.
+   
+   Konsep Desain: Universitas Terbuka Corporate Identity (Royal Blue dan Gold Accents)
+   berpadu dengan gaya modern, clean interface, dan interaktivitas tingkat tinggi.
+*/
+
+/* 1. IMPOR FONTS ELEGANT */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* 2. ROOT & DASAR HALAMAN */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc; /* Slate 50: latar belakang abu-abu sangat muda dan bersih */
+  color: #1e293b; /* Slate 800: warna teks charcoal gelap prima demi kontras tinggi */
+  min-height: 100vh;
+}
+
+/* Penerapan font judul modern */
+h1, h2, h3, h4, .brand-title {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Penerapan font data numerik atau status teknis */
+.font-technical, .mono-data {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* 3. UT BRAND IDENTITY COLORS (Simulasi Tema Universitas Terbuka) */
+:root {
+  --ut-blue-primary: #004687;   /* Biru UT khas: Mewakili kecerdasan dan kredibilitas */
+  --ut-blue-dark: #002e60;
+  --ut-gold: #ffcc00;            /* Kuning/Emas UT: Mewakili masa depan gemilang dan kesuksesan */
+  --ut-gold-light: #fff3c4;
+}
+
+.bg-ut-blue {
+  background-color: var(--ut-blue-primary);
+}
+.text-ut-blue {
+  color: var(--ut-blue-primary);
+}
+.border-ut-blue {
+  border-color: var(--ut-blue-primary);
+}
+.bg-ut-gold {
+  background-color: var(--ut-gold);
+}
+.text-ut-gold {
+  color: var(--ut-gold);
+}
+
+/* 4. CUSTOM SCROLLBAR UTK KENYAMANAN VISUAL */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 5. ANIMASI TRANSISI HALAMAN & MODAL */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.25s ease-in-out;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+
+/* Efek kemunculan modal */
+@keyframes modal-scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-entrance {
+  animation: modal-scale-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 6. LOGISTIK TIMELINE COMPONENT STYLE (SITTA VERTICAL TRACKER) */
+.timeline-line::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 15px;
+  width: 2px;
+  background-color: #e2e8f0; /* Border slate 200 */
+}
+
+/* Efek denyut (pulse) untuk status perjalanan logistik terakhir */
+.pulse-marker {
+  box-shadow: 0 0 0 0 rgba(0, 70, 135, 0.4);
+  animation: marker-pulse 2s infinite;
+}
+
+@keyframes marker-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 70, 135, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(0, 70, 135, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 70, 135, 0);
+  }
+}
+
+/* 7. CUSTOM INPUT DAN FORM INTERAKTIF */
+input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--ut-blue-primary) !important;
+  box-shadow: 0 0 0 3px rgba(0, 70, 135, 0.15) !important;
+  outline: none;
+}
+
+/* Hover effect pada data tabel */
+.table-row-hover {
+  transition: background-color 0.15s ease-in-out;
+}
+.table-row-hover:hover {
+  background-color: #f8fafc;
+}
+
+/* 8. CATATAN HOVER TOOLTIP EFFECT STYLING */
+.tooltip-trigger:hover .tooltip-target {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
