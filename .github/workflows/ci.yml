@@ -28,11 +28,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+          # Menghapus package-lock.json untuk memaksa npm membangun ulang struktur dependensi
+          # dan mengunduh native binary @tailwindcss/oxide yang cocok dengan platform runner (linux-x64).
+          # Ini memperbaiki masalah "Cannot find native binding" akibat perbedaan sistem operasi asal.
+          rm -f package-lock.json
+          npm install
 
       - name: Run Linter (Type check)
         run: |
