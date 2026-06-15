@@ -1,0 +1,1172 @@
+<!doctype html>
+<!--
+  @license
+  SPDX-License-Identifier: Apache-2.0
+-->
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SITTA UT - Sistem Pemesanan Bahan Ajar Universitas Terbuka</title>
+    
+    <!-- 1. TAILWIND CSS PLAY CONFIGURATION VIA CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              utBlue: {
+                DEFAULT: '#004687', // Biru UT Utama
+                dark: '#002e60',    // Biru UT Gelap
+                light: '#e0effe'
+              },
+              utGold: {
+                DEFAULT: '#ffcc00', // Kuning/Emas UT
+                light: '#fffbd2'
+              }
+            }
+          }
+        }
+      }
+    </script>
+    
+    <!-- 2. GAYA GLOBAL CUSTOM (Dibuat secara profesional sesuai berkas assets/css/style.css) -->
+    <link rel="stylesheet" crossorigin href="/assets/index-BYdiIme0.css">
+  </head>
+  <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
+    
+    <!-- ==========================================
+         VUE APP ROOT MOUNTING POINT
+         ========================================= -->
+    <div id="app" class="relative min-h-screen flex flex-col">
+      
+      <!-- LOADING COVER STATE -->
+      <div v-if="loading" class="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-xs flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl border border-slate-100 flex flex-col items-center max-w-sm text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-4 border-utBlue border-t-utGold mb-4"></div>
+          <p class="font-semibold text-slate-700">Mempersiapkan Sistem SITTA UT...</p>
+          <p class="text-xs text-slate-400 mt-2">Mohon tunggu sementara data bahan ajar sedang disinkronisasikan.</p>
+        </div>
+      </div>
+
+      <!-- ERROR ALARM STATE -->
+      <div v-if="errorMsg" class="max-w-4xl mx-auto mt-8 p-4 bg-red-100 text-red-800 rounded-xl flex items-center shadow">
+        <svg class="w-6 h-6 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <span>
+          <strong class="font-bold">Error Terjadi: </strong>
+          <span v-text="errorMsg"></span>
+        </span>
+      </div>
+
+      <!-- MAIN APP HEADER & UT DECORATIONS -->
+      <header class="bg-utBlue shadow-lg border-b-4 border-utGold sticky top-0 z-30 transition-all">
+        <!-- Thin Top Bar -->
+        <div class="bg-utBlue-dark text-white/85 text-xs py-1.5 px-4 md:px-8 border-b border-white/5 flex items-center justify-between">
+          <div class="flex items-center space-x-1 font-technical">
+            <span>Server Ingress:</span>
+            <span class="bg-slate-800 text-teal-400 px-1.5 py-0.5 rounded font-bold text-[10px]">PRODUCTION-READY</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span>STSI4209 Tugas Praktik 3</span>
+            <span>•</span>
+            <span class="hover:text-utGold transition cursor-pointer" @click="resetToFactoryDefaults">Reset Database</span>
+          </div>
+        </div>
+
+        <!-- Main Banner Brand -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-4">
+            <!-- UT Logo Circle (Beautiful Minimalist Vector Design) -->
+            <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center border-2 border-utGold shadow-inner flex-shrink-0 p-1">
+              <svg class="h-10 w-10 text-utBlue" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <!-- Abstract Book and Globe representation for UT -->
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 bg-utGold text-utBlue-dark text-[10px] font-bold rounded">SITTA v3.0</span>
+                <span class="text-xs text-white/60 font-semibold uppercase tracking-wider">Universitas Terbuka</span>
+              </div>
+              <h1 class="text-xl md:text-2xl font-bold text-white tracking-tight leading-none mt-1">
+                Sistem Informasi Tiras &amp; Transaksi Bahan Ajar
+              </h1>
+            </div>
+          </div>
+
+          <!-- Realtime System Clock (Literal & Transparent Design) -->
+          <div class="bg-utBlue-dark/55 border border-white/10 rounded-2xl p-3 flex items-center space-x-3 text-right max-w-xs w-full md:w-auto">
+            <div class="bg-utGold/20 p-2 rounded-xl text-utGold">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase text-white/50 tracking-widest font-bold">Waktu Server Lokal</p>
+              <!-- Realtime digital clock -->
+              <p class="text-sm font-technical font-medium text-white/95 mt-0.5">
+                15 Juni 2026, 09:27 UTC
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Navigation Row (Interactive, Kebab-case templates mapped) -->
+        <div class="bg-utBlue-dark border-t border-white/5">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex space-x-2 py-2" aria-label="Navigasi Utama">
+              <!-- Tab 1: Stok (Active) -->
+              <button 
+                id="tab-stok-btn"
+                @click="changeTab('stok')"
+                class="px-5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all duration-200 flex items-center space-x-2"
+                :class="activeTab === 'stok' ? 'bg-utGold text-utBlue-dark shadow-lg font-bold' : 'text-white/80 hover:bg-white/5 hover:text-white'"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                <span>Stok Bahan Ajar</span>
+                <span class="bg-white/20 text-[10px] px-1.5 py-0.5 rounded-md font-bold" :class="activeTab === 'stok' && 'bg-utBlue-dark/15 text-utBlue-dark'" v-text="state.stok.length"></span>
+              </button>
+
+              <!-- Tab 2: Lacak DO -->
+              <button 
+                id="tab-tracking-btn"
+                @click="changeTab('tracking')"
+                class="px-5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all duration-200 flex items-center space-x-2"
+                :class="activeTab === 'tracking' ? 'bg-utGold text-utBlue-dark shadow-lg font-bold' : 'text-white/80 hover:bg-white/5 hover:text-white'"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                </svg>
+                <span>Tracking Pengiriman DO</span>
+                <span class="bg-white/20 text-[10px] px-1.5 py-0.5 rounded-md font-bold" :class="activeTab === 'tracking' && 'bg-utBlue-dark/15 text-utBlue-dark'" v-text="state.tracking.length"></span>
+              </button>
+
+              <!-- Tab 3: Pemesanan Baru -->
+              <button 
+                id="tab-order-btn"
+                @click="changeTab('order')"
+                class="px-5 py-3 rounded-xl text-xs font-semibold cursor-pointer transition-all duration-200 flex items-center space-x-2"
+                :class="activeTab === 'order' ? 'bg-utGold text-utBlue-dark shadow-lg font-bold' : 'text-white/80 hover:bg-white/5 hover:text-white'"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Buat Pesanan DO Baru</span>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <!-- ==========================================
+           MAIN CONTENT BODY (RESPONSIVE SECTIONS)
+           ========================================= -->
+      <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Tab 1: Stok Section -->
+        <section v-show="activeTab === 'stok'" class="space-y-6">
+          <ba-stock-table 
+            :items="state.stok" 
+            :upbjj-list="state.upbjjList"
+            :kategori-list="state.kategoriList"
+            @add-stock="handleAddStock"
+            @update-stock="handleUpdateStock"
+            @delete-stock="handleDeleteStock"
+          ></ba-stock-table>
+        </section>
+
+        <!-- Tab 2: Lacak DO Section -->
+        <section v-show="activeTab === 'tracking'" class="space-y-6">
+          <do-tracking
+            :tracking-list="state.tracking"
+            :paket-list="state.paket"
+            @update-tracking="handleUpdateTracking"
+          ></do-tracking>
+        </section>
+
+        <!-- Tab 3: Pemesanan Baru Section -->
+        <section v-show="activeTab === 'order'" class="space-y-6">
+          <!-- Handled by order-form Vue component -->
+          <order-form
+            :paket-list="state.paket"
+            :ekspedisi-list="state.pengirimanList"
+            :tracking-list="state.tracking"
+            @submit-do="handleSubmitDo"
+            @change-tab="changeTab"
+          ></order-form>
+        </section>
+
+      </main>
+
+      <!-- ==========================================
+           FOOTER STATEMENT (ARCHITECTURAL INTEGRITY)
+           ========================================= -->
+      <footer class="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="text-center md:text-left">
+            <p class="font-bold text-white tracking-wider text-sm">SITTA SITRES Universitas Terbuka</p>
+            <p class="text-slate-500 mt-1">Sistem Terintegrasi Distribusi Tiras dan Transaksi Buku Pokok &amp; Modul. Ujian Akhir Semester &amp; Pokjar.</p>
+          </div>
+          <div class="font-technical text-[10px] text-slate-500 text-center md:text-right space-y-1">
+            <p>Arsitektur: Vue.js 2.x Component Multi-Template Routing (No-SQL Cache)</p>
+            <p>© 2026 Universitas Terbuka. Seluruh Hak Cipta Dilindungi.</p>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+
+    <!-- ==========================================================================
+         VUE COMPONENT TEMPLATE DECLARATIONS (Sesuai Kriteria dan Spesifikasi ID)
+         ========================================================================== -->
+
+    <!-- TEMPLATE 1: <ba-stock-table> (ID: 'tpl-stock') -->
+    <template id="tpl-stock">
+      <div>
+        
+        <!-- Mini Stats Grid Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+          <!-- Stat 1 -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Bahan Ajar</p>
+              <h4 class="text-2xl font-bold text-slate-800 mt-1 font-technical" v-text="stats.totalBuku"></h4>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </div>
+          </div>
+          <!-- Stat 2 -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stok Menipis (Kritis)</p>
+              <h4 class="text-2xl font-bold text-amber-600 mt-1 font-technical" v-text="stats.kritis"></h4>
+            </div>
+            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+            </div>
+          </div>
+          <!-- Stat 3 -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stok Kosong Habis</p>
+              <h4 class="text-2xl font-bold text-red-600 mt-1 font-technical" v-text="stats.kosong"></h4>
+            </div>
+            <div class="p-3 bg-red-50 text-red-600 rounded-xl">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEARCH, DEPENDENT FILTER, & SORT CONTROLS CARD -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
+          <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 pb-5 border-b border-slate-100">
+            <!-- Search Title context -->
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Manajemen Inventori Buku Pokok &amp; Modul</h2>
+              <p class="text-xs text-slate-400 mt-1">Saring stok berdasarkan wilayah UPBJJ Universitas Terbuka dan ketegori mata kuliah.</p>
+            </div>
+            <!-- Add Button -->
+            <button 
+              @click="openAddForm"
+              class="px-4 py-2.5 bg-utBlue text-white hover:bg-utBlue-dark hover:shadow-lg hover:shadow-blue-900/20 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer active:translate-y-[1px]"
+            >
+              <svg class="w-4 h-4 text-utGold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+              </svg>
+              <span>Tambah Stok Bahan Ajar</span>
+            </button>
+          </div>
+
+          <!-- Filters Form Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
+            <!-- Input keyword -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Cari Bahan Ajar</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  v-model="searchQuery"
+                  placeholder="Kode, judul, rak..." 
+                  class="w-full text-xs p-3 pl-9 border border-slate-200 rounded-xl focus:border-utBlue"
+                />
+                <span class="absolute left-3 top-3.5 text-slate-400">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <!-- Filter UT-Daerah (selectedUpbjj) -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase">1. Pilih UT-Daerah</label>
+              <select v-model="selectedUpbjj" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-white focus:border-utBlue">
+                <option value="">-- Semua UT Daerah --</option>
+                <option v-for="item in upbjjList" :key="item" :value="item" v-text="item"></option>
+              </select>
+            </div>
+
+            <!-- Filter Kategori - DEPENDENT OPTION (Pilih UT-Daerah dulu!) -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
+                2. Kategori Mata Kuliah
+              </label>
+              <!-- Info note if region is not chosen yet -->
+              <div v-if="!selectedUpbjj" class="p-3 text-[11px] bg-slate-50 border border-slate-100 rounded-xl text-slate-400 leading-tight">
+                ℹ️ Pilih UT-Daerah terlebih dahulu
+              </div>
+              <select 
+                v-else
+                v-model="selectedKategori"
+                class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-white focus:border-utBlue"
+              >
+                <option value="">-- Semua Kategori Utama --</option>
+                <!-- Menampilkan kategori khas yang ter-cache pada wilayah tersebut -->
+                <option v-for="cat in availableCategoriesForSelectedUpbjj" :key="cat" :value="cat" v-text="cat"></option>
+              </select>
+            </div>
+
+            <!-- Sorting & Ordering -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Urutkan Berdasarkan</label>
+              <div class="flex space-x-1.5">
+                <select v-model="sortBy" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-white focus:border-utBlue">
+                  <option value="judul">Judul MK</option>
+                  <option value="stok">Kuantitas Stok</option>
+                  <option value="harga">Harga Satuan</option>
+                </select>
+                <!-- Sort direction indicator -->
+                <button 
+                  @click="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'" 
+                  class="px-3 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 cursor-pointer"
+                  title="Ganti Arah Urutan"
+                >
+                  <span v-if="sortOrder === 'asc'">🔼</span>
+                  <span v-else>🔽</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom controls bar (Critical filter toggler & Reset btn) -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-5 mt-4 border-t border-slate-100">
+            <!-- Checkbox filter kritis -->
+            <label class="inline-flex items-center space-x-2 text-slate-600 text-xs cursor-pointer select-none">
+              <input 
+                type="checkbox" 
+                v-model="filterCriticalOnly"
+                class="rounded border-slate-300 text-utBlue focus:ring-utBlue h-4.5 w-4.5 cursor-pointer accent-blue-700" 
+              />
+              <span class="font-semibold text-slate-700">Tampilkan Hanya Stok Kritis (Kosong &amp; Menipis)</span>
+            </label>
+
+            <!-- Reset Filters -->
+            <button 
+              @click="resetFilters" 
+              class="text-xs font-semibold text-slate-500 hover:text-red-600 underline hover:no-underline flex items-center space-x-1 transition cursor-pointer"
+            >
+              <span>♻️ Atur Ulang Semua Saringan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- MAIN TABLE LIST FOR STOCKS -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-100">
+              <thead class="bg-slate-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">MATAKULIAH (KODE &amp; JUDUL)</th>
+                  <th scope="col" class="px-6 py-3.5 class text-left text-xs font-bold text-slate-500 uppercase tracking-wider">KATEGORI</th>
+                  <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">UT DAERAH (UPBJJ)</th>
+                  <th scope="col" class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">LOKASI RAK</th>
+                  <th scope="col" class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">HARGA SATUAN</th>
+                  <th scope="col" class="px-6 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">STOK TEKUN</th>
+                  <th scope="col" class="px-6 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">STOK AMAN (SAFETY)</th>
+                  <th scope="col" class="px-6 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider" style="position: relative;">STATUS</th>
+                  <th scope="col" class="relative px-6 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">AKSI</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white">
+                
+                <!-- LOOP DATA STOK BAHAN AJAR -->
+                <tr 
+                  v-for="item in filteredAndSortedStocks" 
+                  :key="item.kode" 
+                  class="table-row-hover transition-colors"
+                >
+                  <!-- Kode & Judul -->
+                  <td class="px-6 py-4">
+                    <div class="flex flex-col">
+                      <span class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider" v-text="item.kode"></span>
+                      <span class="text-sm font-semibold text-slate-800 hover:text-utBlue transition mt-0.5" v-text="item.judul"></span>
+                    </div>
+                  </td>
+                  
+                  <!-- Kategori -->
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    <span class="px-2.5 py-1 bg-slate-100 text-slate-700 text-[10.5px] rounded font-semibold whitespace-nowrap" v-text="item.kategori"></span>
+                  </td>
+                  
+                  <!-- UPBJJ -->
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    <div class="flex items-center space-x-1">
+                      <span class="text-[11px] font-bold text-slate-500">📍 UB:</span>
+                      <span class="font-semibold text-slate-700" v-text="item.upbjj"></span>
+                    </div>
+                  </td>
+                  
+                  <!-- Lokasi Rak -->
+                  <td class="px-6 py-4 whitespace-nowrap font-technical text-xs font-medium text-slate-500 uppercase">
+                    <span class="inline-flex items-center bg-blue-50/50 text-blue-700 border border-blue-100 rounded-lg px-2 py-0.5" v-text="item.lokasiRak"></span>
+                  </td>
+                  
+                  <!-- Harga (Format Rp Filter) -->
+                  <td class="px-6 py-4 whitespace-nowrap text-right font-technical text-sm font-semibold text-slate-700">
+                    {{ item.harga | rupiah }}
+                  </td>
+                  
+                  <!-- Qty Stok (Format buah Filter) -->
+                  <td class="px-6 py-4 whitespace-nowrap text-center font-technical text-sm font-medium">
+                    <span :class="item.qty === 0 ? 'text-red-650 font-bold bg-red-100 px-2 py-0.5 rounded-lg' : 'text-slate-700'">
+                      {{ item.qty | buah }}
+                    </span>
+                  </td>
+                  
+                  <!-- Qty Safety (Format buah Filter) -->
+                  <td class="px-6 py-4 whitespace-nowrap text-center font-technical text-sm text-slate-500">
+                    {{ item.safety | buah }}
+                  </td>
+                  
+                  <!-- Status (Dinamis via <status-badge> + Mouse Hover Tooltip untuk CatatanHTML) -->
+                  <td 
+                    class="px-6 py-4 whitespace-nowrap text-center relative" 
+                    @mouseenter="hoveredItem = item.kode"
+                    @mouseleave="hoveredItem = null"
+                  >
+                    <!-- Visual badge component -->
+                    <status-badge :qty="item.qty" :safety="item.safety" :catatan-html="item.catatanHTML"></status-badge>
+
+                    <!-- TOOLTIP POPUP (Mouse Hover Event dengan V-HTML render) -->
+                    <div 
+                      v-if="hoveredItem === item.kode && item.catatanHTML"
+                      class="absolute z-50 left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-slate-800 text-white text-xs rounded-xl shadow-xl border border-slate-700 text-left transition-all duration-200"
+                    >
+                      <div class="font-bold mb-1 ml-0.5 flex items-center text-amber-400">
+                        <svg class="w-3.5 h-3.5 mr-1 text-utGold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Catatan Lapangan:</span>
+                      </div>
+                      <!-- render as html formatting -->
+                      <div class="leading-relaxed pl-4.5 text-slate-200 font-normal" v-html="item.catatanHTML"></div>
+                      <div class="absolute w-2 h-2 bg-slate-800 rotate-45 bottom-[-4px] left-1/2 -translate-x-1/2 border-r border-b border-slate-700"></div>
+                    </div>
+                  </td>
+
+                  <!-- Tindakan Aksi (Edit & Delete) -->
+                  <td class="px-6 py-4 whitespace-nowrap text-center text-xs font-semibold space-x-1.5">
+                    <button 
+                      @click="openEditForm(item)"
+                      class="px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:text-utBlue hover:border-utBlue/50 hover:bg-utBlue/5 rounded-lg transition-all cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      @click="triggerDelete(item)"
+                      class="px-2.5 py-1.5 bg-red-105 border border-red-200 text-red-650 hover:bg-red-600 hover:text-white rounded-lg transition-all cursor-pointer"
+                    >
+                      Hapus
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- EMPTY STATE SEARCH -->
+                <tr v-if="filteredAndSortedStocks.length === 0">
+                  <td colspan="9" class="px-6 py-12 text-center text-slate-400 text-xs">
+                    <p class="font-semibold text-slate-500">Bahan ajar tidak dapat ditemukan.</p>
+                    <p class="mt-1">Pilih kriteria kata kunci lain atau reset filter untuk kembali menampilkan data penuh.</p>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- FORM MODAL INPUT (Add / Edit Stock) -->
+        <div v-show="showForm" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+          <!-- Backdrop -->
+          <div @click="closeForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"></div>
+          
+          <!-- Box Form Container -->
+          <div class="relative w-full max-w-xl mx-4 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 animate-modal-entrance overflow-hidden">
+            <!-- Form Header -->
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-bold text-slate-800 flex items-center">
+                  <span class="mr-2 text-utGold">⭐</span>
+                  <span v-text="isEditMode ? 'Edit Stok Bahan Ajar SITTA' : 'Tambah Stok Bahan Ajar Baru'"></span>
+                </h3>
+                <p class="text-[10.5px] text-slate-400 mt-0.5">Lakukan pengisian data logistik materi pokok secara cermat.</p>
+              </div>
+              <button @click="closeForm" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-150 transition">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Form Body with fields -->
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin">
+              
+              <!-- Error Notification Alert banner -->
+              <div v-if="formError" class="p-3 bg-red-50 text-red-750 text-xs font-semibold rounded-xl border border-red-150 flex items-center">
+                <span class="mr-2">🚨</span>
+                <span v-text="formError"></span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <!-- Kode MK (Read-only if Edit Mode) -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">KODE MK (UNIK)*</label>
+                  <input 
+                    type="text" 
+                    v-model="form.kode"
+                    :disabled="isEditMode"
+                    placeholder="Contoh: EKMA4116" 
+                    class="w-full text-xs p-2.5 border rounded-xl"
+                    :class="isEditMode ? 'bg-slate-50 text-slate-400 cursor-not-allowed' : 'bg-white text-slate-800'"
+                    @keydown.enter="saveStock"
+                  />
+                </div>
+                
+                <!-- Judul MK -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">JUDUL MATA KULIAH*</label>
+                  <input 
+                    type="text" 
+                    v-model="form.judul"
+                    placeholder="Contoh: Pengantar Manajemen" 
+                    class="w-full text-xs p-2.5 border rounded-xl"
+                    @keydown.enter="saveStock"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <!-- Dropdown Kategori -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">KATEGORI MATA KULIAH*</label>
+                  <select v-model="form.kategori" class="w-full text-xs p-2.5 border rounded-xl bg-white focus:border-utBlue">
+                    <option v-for="cat in kategoriList" :key="cat" :value="cat" v-text="cat"></option>
+                  </select>
+                </div>
+                
+                <!-- Dropdown UPBJJ -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">ALOKASI UT-DAERAH (UPBJJ)*</label>
+                  <select v-model="form.upbjj" class="w-full text-xs p-2.5 border rounded-xl bg-white focus:border-utBlue">
+                    <option v-for="area in upbjjList" :key="area" :value="area" v-text="area"></option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                <!-- Lokasi Rak -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">LOKASI RAK*</label>
+                  <input 
+                    type="text" 
+                    v-model="form.lokasiRak"
+                    placeholder="Contoh: R1-A3" 
+                    class="w-full text-xs p-2.5 border rounded-xl uppercase"
+                    @keydown.enter="saveStock"
+                  />
+                </div>
+                
+                <!-- Harga -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">HARGA SATUAN (RP)*</label>
+                  <input 
+                    type="number" 
+                    v-model.number="form.harga"
+                    placeholder="65000" 
+                    class="w-full text-xs p-2.5 border rounded-xl font-technical"
+                    @keydown.enter="saveStock"
+                  />
+                </div>
+
+                <!-- Unit Stok -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">KUANTITAS STOK*</label>
+                  <input 
+                    type="number" 
+                    v-model.number="form.qty"
+                    placeholder="28" 
+                    class="w-full text-xs p-2.5 border rounded-xl font-technical"
+                    @keydown.enter="saveStock"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <!-- Safety Stock -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">AMBANG STOK AMAN (SAFETY)*</label>
+                  <input 
+                    type="number" 
+                    v-model.number="form.safety"
+                    placeholder="10" 
+                    class="w-full text-xs p-2.5 border rounded-xl font-technical"
+                    @keydown.enter="saveStock"
+                  />
+                </div>
+
+                <!-- Preview Status live based on what user fills -->
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">ESTIMASI KONDISI LIVE</label>
+                  <div class="mt-1 flex items-center space-x-2">
+                    <status-badge :qty="Number(form.qty || 0)" :safety="Number(form.safety || 0)"></status-badge>
+                    <span class="text-[10px] text-slate-400 font-semibold uppercase">Berdasarkan data di atas</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Catatan HTML (v-html rich render support) -->
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">CATATAN LAPANGAN (MENDUKUNG FORMAT HTML)</label>
+                <textarea 
+                  rows="2"
+                  v-model="form.catatanHTML"
+                  placeholder="Contoh: &lt;em&gt;Edisi terbatas&lt;/em&gt;, atau &lt;strong&gt;Cover baru&lt;/strong&gt;" 
+                  class="w-full text-xs p-2.5 border rounded-xl focus:border-utBlue"
+                ></textarea>
+                <div class="mt-1 bg-slate-50 p-2.5 rounded-lg border border-dashed border-slate-100 flex items-center space-x-2">
+                  <span class="text-[10px] font-bold text-slate-400">PRATINJAU FORMAT:</span>
+                  <span class="text-[11.5px] text-slate-600" v-html="form.catatanHTML || '<em>Tidak ada catatan khusus</em>'"></span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Form Actions Footer -->
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-end space-x-2.5">
+              <button 
+                type="button" 
+                @click="closeForm" 
+                class="px-4 py-2 border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-100 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button 
+                type="button" 
+                @click="saveStock" 
+                class="px-4 py-2 bg-utBlue text-white hover:bg-utBlue-dark rounded-xl text-xs font-bold transition cursor-pointer flex items-center space-x-1 hover:shadow-lg shadow-blue-900/10 active:translate-y-[0.5px]"
+              >
+                <svg class="w-4 h-4 text-utGold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>Simpan / Update (Enter)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONFIRMATION POPUP DELETE DATA (app-modal) -->
+        <app-modal 
+          :show="showDeleteModal"
+          title="Konfirmasi Penghapusan Barang"
+          :message="'Apakah Anda benar-benar yakin ingin memfilter permanen dan menghapus ' + titleToDelete + ' dari katalog internal SITTA UT?'"
+          @close="showDeleteModal = false"
+          @confirm="executeDelete"
+        ></app-modal>
+
+      </div>
+    </template>
+
+
+    <!-- TEMPLATE 2: <do-tracking> (ID: 'tpl-tracking') -->
+    <template id="tpl-tracking">
+      <div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- LEFT VIEW: SEARCH COLUMN AND LIST SEARCH RESULTS -->
+          <div class="lg:col-span-4 space-y-5">
+            
+            <!-- Pencarian Panel -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <h3 class="text-sm font-bold text-slate-800 mb-1.5 flex items-center uppercase">
+                <span class="text-blue-600 mr-1.5">🔍</span>
+                <span>Cari Delivery Order (DO)</span>
+              </h3>
+              <p class="text-[11px] text-slate-400 mb-4 leading-tight">Masukkan No. DO terbitan (misal: DO2025-001) atau NIM mahasiswa Universitas Terbuka untuk melacak logistik paket.</p>
+              
+              <!-- Input Search Box with Enter clear search -->
+              <div class="space-y-3">
+                <div class="relative">
+                  <input 
+                    type="text" 
+                    v-model="searchQuery"
+                    placeholder="Masukkan Nomor DO / NIM..." 
+                    class="w-full text-xs p-3.5 pr-10 border border-slate-200 rounded-xl focus:border-utBlue"
+                    @keydown.enter="executeSearch"
+                    @keydown.esc="clearSearch"
+                  />
+                  <!-- Hint icon Enter -->
+                  <span class="absolute right-3.5 top-3.5 text-[10px] font-bold text-slate-300 font-technical select-none">ENTER</span>
+                </div>
+
+                <div class="flex items-center justify-between gap-2.5">
+                  <button 
+                    @click="clearSearch" 
+                    class="w-1/3 px-3 py-2 border border-slate-250 text-slate-500 rounded-xl text-[10.5px] font-bold hover:bg-slate-50 transition cursor-pointer text-center"
+                    title="Reset panel"
+                  >
+                    Atur Ulang (Esc)
+                  </button>
+                  <button 
+                    @click="executeSearch" 
+                    class="w-2/3 px-4 py-2 bg-utBlue text-white rounded-xl text-[10.5px] font-bold hover:bg-utBlue-dark transition cursor-pointer text-center hover:shadow-md active:translate-y-[1px]"
+                  >
+                    Gunakan Pencarian
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- List DO results matching -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 h-[350px] overflow-y-auto scrollbar-thin">
+              <span class="text-[10px] font-bold text-slate-400 block mb-3 uppercase tracking-wider">Hasil Pencarian: ({{ searchResults.length }})</span>
+              
+              <div class="space-y-2.5">
+                <!-- Result row card -->
+                <div 
+                  v-for="item in searchResults" 
+                  :key="item.id"
+                  @click="selectDo(item)"
+                  class="p-3.5 border rounded-2xl cursor-pointer hover:border-utBlue/60 hover:bg-slate-50 transition-all flex flex-col justify-between"
+                  :class="selectedDoId === item.id ? 'border-utBlue bg-blue-50/20 ring-1 ring-utBlue' : 'border-slate-100 bg-white'"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-technical font-bold text-utBlue" v-text="item.id"></span>
+                    
+                    <!-- Minified status label inline -->
+                    <span 
+                      class="text-[9.5px] font-bold px-2 py-0.5 rounded-full"
+                      :class="item.status === 'Diterima' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-105 text-blue-700'"
+                      v-text="item.status"
+                    ></span>
+                  </div>
+                  
+                  <div class="mt-2.5">
+                    <p class="text-xs font-bold text-slate-800" v-text="item.nama"></p>
+                    <p class="text-[10px] text-slate-450 mt-0.5" font-technical>NIM: {{ item.nim }} • {{ item.tanggalKirim }}</p>
+                  </div>
+                </div>
+
+                <!-- Empty result matches list -->
+                <div v-if="searchResults.length === 0" class="py-12 text-center text-xs text-slate-400 leading-normal">
+                  <p class="font-bold">Tidak ada Delivery Order.</p>
+                  <p class="mt-1">NIM atau No. DO tidak cocok.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT VIEW: DETAIL TIMELINE AND APPEND LOG PROGRESS -->
+          <div class="lg:col-span-8">
+            
+            <!-- Detail Card Box -->
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 h-full min-h-[480px] flex flex-col justify-between">
+              
+              <!-- IF NO SELECTED DO -->
+              <div v-if="!activeDoDetails" class="flex flex-col items-center justify-center my-auto py-16 text-center text-slate-400">
+                <div class="w-20 h-20 bg-slate-50 border border-dotted border-slate-200 rounded-full flex items-center justify-center mb-4 text-3xl">
+                  🚚
+                </div>
+                <h4 class="text-sm font-bold text-slate-600 uppercase">Pelacakan Rincian Logistik</h4>
+                <p class="text-xs max-w-sm mt-1.5 leading-relaxed">Pilihlah salah satu nomor Delivery Order (DO) di panel sebelah kiri untuk memaparkan log perjalanan pengiriman buku, mengubah status, serta menginput rincian progres logistik baru.</p>
+              </div>
+
+              <!-- IF ACTIVE DO IS SHOWN -->
+              <div v-else class="space-y-6 flex-grow flex flex-col justify-between">
+                
+                <div>
+                  <!-- Head info panel -->
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-5 gap-3.5">
+                    <div>
+                      <div class="flex items-center space-x-2">
+                        <span class="text-xs font-technical font-bold text-slate-400 uppercase tracking-widest">SITTA DELIVERY TRACKER</span>
+                        <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded" v-text="activeDoDetails.ekspedisi"></span>
+                      </div>
+                      <h2 class="text-xl font-bold text-slate-800 mt-1 font-technical inline-flex items-center">
+                        No. DO: <span class="text-utBlue ml-1.5" v-text="activeDoDetails.id"></span>
+                      </h2>
+                    </div>
+
+                    <!-- Live Main status badge -->
+                    <div class="flex items-center space-x-2">
+                      <span class="text-xs font-bold text-slate-400">Status Terkini:</span>
+                      <span 
+                        class="px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider"
+                        :class="activeDoDetails.status === 'Diterima' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-200'"
+                        v-text="activeDoDetails.status"
+                      ></span>
+                    </div>
+                  </div>
+
+                  <!-- Summary Box Grid -->
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs mt-5">
+                    <!-- NIM -->
+                    <div>
+                      <span class="block text-slate-400 font-bold text-[9px] uppercase tracking-wider mb-0.5">NIM MAHASISWA</span>
+                      <strong class="font-technical text-slate-700" v-text="activeDoDetails.nim"></strong>
+                    </div>
+                    <!-- NAMA -->
+                    <div>
+                      <span class="block text-slate-400 font-bold text-[9px] uppercase tracking-wider mb-0.5">NAMA MAHASISWA</span>
+                      <strong class="text-slate-700" v-text="activeDoDetails.nama"></strong>
+                    </div>
+                    <!-- PAKET -->
+                    <div>
+                      <span class="block text-slate-400 font-bold text-[9px] uppercase tracking-wider mb-0.5">PAKET BAHAN AJAR</span>
+                      <strong class="text-slate-700" v-text="getPaketNama(activeDoDetails.paketKode)"></strong>
+                    </div>
+                    <!-- HARGA -->
+                    <div>
+                      <span class="block text-slate-400 font-bold text-[9px] uppercase tracking-wider mb-0.5">TOTAL BIAYA UT</span>
+                      <strong class="font-technical text-slate-750 text-sm" v-text="$options.filters.rupiah(activeDoDetails.total)"></strong>
+                    </div>
+                  </div>
+
+                  <!-- VERTICAL JOURNEY TIMELINE -->
+                  <div class="mt-6">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Riwayat Perjalanan Logistik:</h4>
+                    
+                    <div class="relative timeline-line pl-1.5 max-h-[190px] overflow-y-auto scrollbar-thin">
+                      <!-- Timeline node looped -->
+                      <div 
+                        v-for="(point, idx) in activeDoDetails.perjalanan" 
+                        :key="idx" 
+                        class="relative pl-8 pb-5 text-xs text-slate-600"
+                      >
+                        <!-- Node indicator dot (glowing for last index) -->
+                        <span 
+                          class="absolute left-2.5 top-1 z-10 w-2.5 h-2.5 rounded-full"
+                          :class="idx === activeDoDetails.perjalanan.length - 1 ? 'bg-utBlue pulse-marker w-3 h-3 left-2' : 'bg-slate-300'"
+                        ></span>
+                        
+                        <!-- Timeline box details -->
+                        <div class="bg-white hover:bg-slate-50 border border-slate-100 p-3 rounded-xl transition-all shadow-xs">
+                          <p class="font-technical text-[10.5px] text-slate-400 font-semibold" v-text="point.waktu"></p>
+                          <p class="mt-1 text-slate-700 leading-normal" v-text="point.keterangan"></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- APPEND NEW PROGRESS TIMELINE FIELD FORM -->
+                <div class="bg-slate-50 -mx-6 -mb-6 p-6 border-t border-slate-100 rounded-b-2xl mt-6">
+                  <h4 class="text-xs font-bold text-slate-700 uppercase mb-3 flex items-center">
+                    <span class="text-amber-500 mr-2">📌</span>
+                    <span>Tambahkan Progres Lapangan Baru (SITTA Operator)</span>
+                  </h4>
+
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <!-- Dropdown status -->
+                    <div class="w-full sm:w-1/4">
+                      <label class="block text-[10px] font-bold text-slate-400 mb-1">AMENDEMEN STATUS</label>
+                      <select v-model="updatedDoStatus" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl focus:border-utBlue">
+                        <option value="Dalam Perjalanan">Dalam Perjalanan</option>
+                        <option value="Diterima">Diterima</option>
+                      </select>
+                    </div>
+
+                    <!-- Textarea comment -->
+                    <div class="w-full sm:w-2/4">
+                      <label class="block text-[10px] font-bold text-slate-400 mb-1">KETERANGAN POSISI BARANG*</label>
+                      <input 
+                        v-model="newProgressKeterangan"
+                        type="text"
+                        placeholder="Contoh: Paket sampai di hub UPBJJ Makassar" 
+                        class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl focus:border-utBlue"
+                        @keydown.enter="addTrackingProgress"
+                      />
+                    </div>
+
+                    <!-- Button save -->
+                    <div class="w-full sm:w-1/4 flex items-end">
+                      <button 
+                        @click="addTrackingProgress"
+                        class="w-full p-2.5 bg-utBlue text-white hover:bg-utBlue-dark hover:shadow-md hover:shadow-blue-900/10 active:translate-y-[1px] text-xs font-bold rounded-xl transition cursor-pointer text-center"
+                      >
+                        Kirim Progress
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </template>
+
+
+    <!-- TEMPLATE 3: <order-form> (ID: 'tpl-order') -->
+    <template id="tpl-order">
+      <div class="max-w-2xl mx-auto">
+        
+        <!-- Order Form Card Container -->
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-lg overflow-hidden">
+          
+          <!-- Banner header -->
+          <div class="bg-utBlue p-6 border-b-4 border-utGold text-white">
+            <h2 class="text-lg font-bold flex items-center">
+              <span class="mr-2 text-utGold">📝</span>
+              <span>Formulir Transaksi Pemesanan &amp; Distribusi DO</span>
+            </h2>
+            <p class="text-xs text-white/70 mt-1">Gunakan formulir untuk mendaftarkan NIM mahasiswa Universitas Terbuka, memilih paket, serta menerbitkan DO otomatis.</p>
+          </div>
+
+          <!-- Form Area -->
+          <div class="p-6 space-y-4">
+            
+            <!-- Dynamic Notifications errors/success -->
+            <div v-if="formError" class="p-3.5 bg-red-50 text-red-700 text-xs font-semibold rounded-xl border border-red-100 flex items-center">
+              <span class="mr-2">🚨</span>
+              <span v-text="formError"></span>
+            </div>
+
+            <div v-if="formSuccess" class="p-3.5 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-100 flex items-center">
+              <span class="mr-2">✅</span>
+              <span v-text="formSuccess"></span>
+            </div>
+
+            <!-- ROW 1: DO Number (Auto-generated) and Tanggal Kirim (Auto-Date) -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NOMOR DO (AUTO-GENERATE)</label>
+                <input 
+                  type="text" 
+                  :value="nextDoNumber" 
+                  disabled 
+                  class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-55 font-technical font-bold text-utBlue-dark cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">TANGGAL KIRIM (AUTOMATIC DATE)</label>
+                <input 
+                  type="text" 
+                  :value="formattedLaunchDate" 
+                  disabled 
+                  class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-slate-55 font-technical text-slate-500 cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <!-- ROW 2: NIM and Nama (Manual input) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NIM MAHASISWA UT (9 DIGIT)*</label>
+                <input 
+                  type="text" 
+                  v-model="nim" 
+                  placeholder="Contoh: 123456789" 
+                  class="w-full text-xs p-3 border border-slate-200 rounded-xl uppercase focus:border-utBlue"
+                  maxlength="9"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP MAHASISWA*</label>
+                <input 
+                  type="text" 
+                  v-model="nama" 
+                  placeholder="Contoh: Rina Wulandari" 
+                  class="w-full text-xs p-3 border border-slate-200 rounded-xl focus:border-utBlue"
+                />
+              </div>
+            </div>
+
+            <!-- ROW 3: Ekspedisi select dropdown -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">PILIH JASA EKSPEDISI*</label>
+              <select v-model="selectedEkspedisi" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-white focus:border-utBlue">
+                <option value="">-- Silakan Pilih Layanan --</option>
+                <option v-for="shipping in ekspedisiList" :key="shipping.kode" :value="shipping.nama" v-text="shipping.nama"></option>
+              </select>
+            </div>
+
+            <!-- ROW 4: Paket Bahan Ajar select dropdown -->
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">PAKET MATAKULIAH YANG DIPESAN*</label>
+              <select v-model="selectedPaketKode" class="w-full text-xs p-3 border border-slate-200 rounded-xl bg-white focus:border-utBlue">
+                <option value="">-- Tampilkan Daftar Paket --</option>
+                <option v-for="pack in paketList" :key="pack.kode" :value="pack.kode">
+                  {{ pack.kode }} - {{ pack.nama }}
+                </option>
+              </select>
+            </div>
+
+            <!-- DETAIL BOX OF SELECTED PACKAGE INSTRUCTIONS -->
+            <div 
+              v-if="selectedPaketDetails" 
+              class="p-4 bg-blue-50/45 border border-blue-100 rounded-2xl text-xs space-y-2 mt-2"
+            >
+              <div class="flex items-center justify-between">
+                <strong class="text-utBlue uppercase font-bold text-[10.5px]">Isi Katalog {{ selectedPaketDetails.nama }}:</strong>
+                <span class="text-xs bg-slate-100 font-technical font-bold text-slate-600 px-2 py-0.5 rounded">
+                  Modul Tergabung: {{ selectedPaketDetails.isi.length }} Buku
+                </span>
+              </div>
+              
+              <!-- Contents book list -->
+              <ul class="list-disc list-inside text-slate-600 pl-1 space-y-1">
+                <li v-for="buku in selectedPaketDetails.isi" :key="buku" v-text="buku"></li>
+              </ul>
+            </div>
+
+            <!-- ROW 5: Live calculated Price formatting (Format filter Rp) -->
+            <div class="bg-slate-50 p-4 rounded-2xl flex items-center justify-between mt-4 border border-slate-100">
+              <div>
+                <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Kalkulasi Total Pembayaran:</span>
+                <span class="text-slate-400 text-xs mt-0.5">Sudah termasuk PPN dan jasa distribusi UT</span>
+              </div>
+              <div class="text-right">
+                <h4 class="text-xl font-technical font-bold text-slate-800">
+                  {{ calculatedTotal | rupiah }}
+                </h4>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Submit Action footer -->
+          <div class="bg-slate-50 px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[10.5px] text-slate-400 leading-tight">Pastikan seluruh data NIM &amp; Nama sudah sesuai KTOM Mahasiswa.</span>
+            <button 
+              @click="submitOrder"
+              class="px-5 py-3 bg-utBlue text-white hover:bg-utBlue-dark hover:shadow-lg hover:shadow-blue-900/15 text-xs font-bold rounded-xl transition cursor-pointer flex items-center space-x-1.5 active:translate-y-[1px]"
+            >
+              <svg class="w-4 h-4 text-utGold" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+              </svg>
+              <span>Proses Delivery Order (DO)</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </template>
+
+
+    <!-- TEMPLATE 4: <status-badge> (ID: 'tpl-badge') -->
+    <template id="tpl-badge">
+      <span 
+        :class="badgeClasses" 
+        class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all duration-200 cursor-help"
+        :title="catatanHtml ? 'Arahkan mouse kemari untuk membaca catatan lapangan' : 'Kondisi stok terpantau aman'"
+      >
+        <span v-html="iconSvg" class="flex items-center"></span>
+        <span v-text="statusText"></span>
+      </span>
+    </template>
+
+
+    <!-- TEMPLATE 5: <app-modal> (ID: 'tpl-modal') -->
+    <template id="tpl-modal">
+      <div v-show="show" class="fixed inset-0 z-[100] flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none">
+        
+        <!-- Dark backdrop filter overlay -->
+        <div @click="closeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-300"></div>
+        
+        <!-- Modal body box -->
+        <div class="relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 animate-modal-entrance overflow-hidden">
+          
+          <!-- Header -->
+          <div class="bg-slate-50 px-6 py-4 border-b border-slate-150 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center">
+              <span class="mr-2">⚠️</span>
+              <span v-text="title"></span>
+            </h3>
+            <button @click="closeModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Content message description -->
+          <div class="px-6 py-6 font-normal">
+            <p class="text-xs text-slate-600 leading-relaxed font-semibold text-slate-550" v-text="message"></p>
+            <!-- Slot for additional payload -->
+            <slot></slot>
+          </div>
+          
+          <!-- Actions footer -->
+          <div class="bg-slate-50 px-6 py-4.5 border-t border-slate-100 flex items-center justify-end space-x-2">
+            <button 
+              @click="closeModal" 
+              class="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              <span v-text="cancelText"></span>
+            </button>
+            <button 
+              @click="confirmAction" 
+              class="px-4 py-2 bg-red-650 text-white hover:bg-red-700 hover:shadow-lg hover:shadow-red-500/20 active:translate-y-[1px] rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              <span v-text="confirmText"></span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </template>
+
+    <!-- ==========================================
+         JAVASCRIPT SCRIPTS (URUTAN PENTING & SESUAI)
+         ========================================= -->
+    
+    <!-- A. Vue.js 2.x CDN (Standard build) -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+
+    <!-- B. Services Layer for Fetching JSON -->
+    <script src="/js/services/api.js"></script>
+
+    <!-- C. Individual Modular Vue Components (kebab-case registered) -->
+    <script src="/js/components/status-badge.js"></script>
+    <script src="/js/components/app-modal.js"></script>
+    <script src="/js/components/stock-table.js"></script>
+    <script src="/js/components/order-form.js"></script>
+    <script src="/js/components/do-tracking.js"></script>
+
+    <!-- D. Vue App Root Orchestrator -->
+    <script src="/js/app.js"></script>
+
+  </body>
+</html>
