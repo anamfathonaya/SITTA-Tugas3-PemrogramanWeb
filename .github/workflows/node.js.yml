@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
+env:
+  # Memaksa GitHub Actions runners menggunakan Node.js 24 untuk menghindari peringatan depresiasi Node 20
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build_and_lint:
     name: Build & Lint Application
@@ -18,11 +22,17 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
+          # Kami menghapus cache: 'npm' di sini karena package-lock.json mungkin belum/tidak di-commit ke Git.
+          # Ini menghindari galat "Dependencies lock file is not found".
 
       - name: Install Dependencies
-        run: npm ci || npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Run Linter (Type check)
         run: npm run lint
