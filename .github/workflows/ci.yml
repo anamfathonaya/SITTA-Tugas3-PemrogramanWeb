@@ -6,13 +6,16 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
+permissions:
+  contents: write
+
 env:
   # Memaksa GitHub Actions runners menggunakan Node.js 24 untuk menghindari peringatan depresiasi Node 20
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build_and_lint:
-    name: Build & Lint Application
+    name: Build, Lint & Deploy Application
     runs-on: ubuntu-latest
 
     steps:
@@ -48,3 +51,10 @@ jobs:
 
       - name: Build Production Bundle
         run: npm run build
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
